@@ -1,11 +1,12 @@
 # Portfolio-optimization-on-Python overview #
-This project implements a mean-variance portfolio optimization strategy using Python, aiming to maximize risk-adjusted returns, using the Sharpe ratio. The project was developed in my first-year of university for the 2025 UK Trading Competition and estimates expected returns, the covariance matrix of asset returns, constructs the efficient frontier and solves the optimization problem.
+This project aims to maximize risk-adjusted returns, using the Sharpe ratio, by implementing a mean-variance portfolio optimization strategy using Python, The project was developed in my first year of university for the 2025 UK Trading Competition and estimates expected returns, the covariance matrix of asset returns, constructs the efficient frontier and solves the optimization problem.
 
 
 
 # Code and theory explained: 
-At first, I imported historical market data for our position to find metrics such as daily returns, volatility and the covariance matrix.
-Then, the PortfolioOptimization class is computed. It contains return estimation, risk estimation, portfolio performance and optimisation.
+I imported and cleaned historical market data for each asset in the team's portfolio to find metrics such as daily returns, volatility and the covariance matrix.
+
+Then, the PortfolioOptimization class is computed. It contains return estimation, risk estimation, portfolio performance and optimization.
 Firstly, the class estimates inputs such as returns, expected returns and the covariance matrix. Secondly, the class measures the portfolio's performance by computing expected returns and risks. The expected return of the portfolio is calculated as the weighted average of the individual asset returns. The weight of each asset in the portfolio is denoted by $w_i$ and $E(R_i)$ is the expected return of asset i: 
 
 $$
@@ -27,13 +28,13 @@ $$
 var(R_p)=E[(R_p - E(R_p)]
 $$
 
-If we then compute this using matrices we can obtain:
+Simplyfiing the above, using matrices' notation, we obtain:
 
 $$
 var(R_p)=w^T \Sigma w
 $$
 
-where $w$ is the weight vector $\Sigma$ is the covariance matrix. This matrix cointains in the diagonal elements the individual asset risk and in the off-diagonal matrices the covariances between asset pairs.
+where $w$ is the weight vector and $\Sigma$ is the covariance matrix. This matrix cointains in the diagonal elements the individual asset risk and in the off-diagonal matrices the covariances between asset pairs.
 
 If we write the formula component-wise we have:
 
@@ -57,8 +58,8 @@ $$
 S(w)=\frac{w^T \mu - r_f}{\sqrt{w^T \Sigma w}}
 $$
 
-We include a risk-free asset, cash in this case with a return $r_f$ of 1% annually and zero volatility. 
-In the code, the class defines the negative Sharpe ratio, $f(w) = -S(w)$,  because the minimize SciPy algorithm minimises the function. So, if we minimise the negative Sharpe ratio, we can maximise the Sharpe ratio:
+We include a risk-free asset - cash in this case - with a return $r_f$ of 1% annually and zero volatility. 
+In the code, the class defines the negative Sharpe ratio, $f(w) = -S(w)$,  because the minimize SciPy algorithm (SLSQP) minimises the function. So, if we minimise the negative Sharpe ratio, we can maximise the Sharpe ratio:
 
 $$
 min_{w} -S(w) = min_{w} f(w) = max_{w} S(w)
@@ -96,15 +97,15 @@ $$
 w_i \in [0.01, 0.30]
 $$
 
-The objective function is non-linear, smooth and not quadratic, so to solve this, the class has to use numerical optimization.
+The objective function is non-linear, smooth and not quadratic. So - to solve this - the class has to use numerical optimization.
 
-As a result, to solve this optimization problem I have decided to use the Sequential Least Squares Quadratic Programming (SLSQP) algorithm, since it is a non-linear constrained optimization.
+As a result, to solve this optimization problem, the best choice is to use the Sequential Least Squares Quadratic Programming (SLSQP) algorithm. This is because it can handle non-linear constrained optimization extremely well even with high dimensions $\mathbb{R}^n$.
 
-What the algorithm does is it solves a simpler quadratic problem, by approximating the objective as a quadratic function and the constrained as linear functions. 
-The objective function is approximated using a second order Taylor expansion and the constraints are approximated with a first order Taylor expansion: 
+The algorithm starts from a point $x_0$. At that point the algorithm uses Taylor's expansion to approximate the objective function as a quadratic and the constraints as a linear model. To do so, it approximates $\nabla f(w)$ using the method of finite differences and it approximates the curvature (the matrix containing all second order derivatives), by approximating the Hessian of the Lagrangian using BFGS. At the first point the curvature is chosen to be the identity matrix. 
+So, the quadratic subproblem is:
 
 $$
-min_{\Delta w}    \nabla f(w_k)^T \Delta w + frac{1} {2} \Delta w^T B_k \Delta w
+min_{\Delta w}    \nabla f(w_k)^T \Delta w + \frac{1} {2} \Delta w^T B_k \Delta w
 $$
 
 $$
@@ -115,13 +116,10 @@ $$
 0.01 \le h(w_k) + \nabla h(w_k) \Delta w \le 0.30
 $$
 
-$B_k$ is the approximation of the Hessian (the matrix containing the second order partial derivatives which indicates curvature) of the Lagrangian (since it is a constrained optimization problem), calculed via BFGS. 
+After this is solved, a new gradient, Hessian and new weights' vector are obtained and another quadratic optimization problem is solved until the algorithm converges to the minimum of the function that respects the constraints.
 
-The algorithm starts from a current point $x_0$. At that point, it approximates the constrained problem with simpler quadratic problems, moving step by step toward the minimum point of the negative Sharpe ratio, where improving the objective would violate constraints or fail to help.
-
-After this is done, we plot the efficient frontier, by using a Monte-Carlo simulation, which generates 10,000 random portfolios, that allows us to plot the efficient frontier. The simulation helps visualize how various portfolios compare in terms of risk and return. Then the optimal portfolio is highlighted.
+After the algorithms finds the optimal weight vector, the code plots the efficient frontier using a Monte-Calro simulation: it generates 10,000 random portfolios, each with different weight vector,  showing for each potofolio its expected returns, variance and Sharpe ratio. The simulation helps visualize how various portfolios compare in terms of risk and return. Finally, the optimal portfolio is highlighted.
 
 # Assumptions
-The optimizer treats estimated means, like estimated returns, as truth, even though they are mostly random noise.
-The use of variance to model risk is limited, since it treats price appreciation the same as drawdowns and it does not appropriately capture tail-risk.
-The covariance matrix $\Sigma$ is estimated from historical data and it is still, even though covariances change constantly also according to market regimes.
+The real world performance of this kind of optimization is limited. First of all, the estimated weights are highly sensitive to expected means, which are mostly random noise. In addition, the optimization problem is highly dependent on modelling risk as variance. This is limited, since it treats price appreciation the same as drawdowns and it does not appropriately capture tail-risk. In addition, the optimization is over-reliant on the covariance matrix $\Sigma$, which is assumed to be still, even though covariances change constantly also according to market regimes.
+Possible further advancement of this modelling would be obtained treating expected means, variances and covariances matrix as time-varying, regime-dependent rather than fixed forecasts. 
