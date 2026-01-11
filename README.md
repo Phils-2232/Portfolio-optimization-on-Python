@@ -122,7 +122,7 @@ After the algorithms finds the optimal weight vector, the code plots the efficie
 
 # Assumptions
 The real world performance of this kind of optimization is limited. First of all, the estimated weights are highly sensitive to expected means,such as expected returns. However, expected returns change constantly, are regime-dependent and are mostly random noise. Moreover, a small mistake in the estimation of the mean level of returns can cause large changes in portfolio weights.
-To improve is to treat asset returns as a stochastic process with time-varying parameters rather than relying on fixed point estimates, using Bayesian time-series or regime-switching frameworks, allowing for parameter uncertainty and structural changes across market regimes.
+This could be improved by treating asset returns as a stochastic process with time-varying parameters rather than relying on fixed point estimates, using Bayesian time-series or regime-switching frameworks, allowing for parameter uncertainty and structural changes across market regimes.
 In addition, the optimization problem is highly dependent on modelling risk as variance. This is limited, since it treats price appreciation the same as drawdowns and it does not appropriately capture tail-risk.
 Furthermore, the optimization is over-reliant on the covariance matrix $\Sigma$, which is assumed to be still, even though covariances change constantly also according to market regimes.
 A possible advancement is to treat covariance matrix and variance as varying and regime-dependent rather than fixed estimates
